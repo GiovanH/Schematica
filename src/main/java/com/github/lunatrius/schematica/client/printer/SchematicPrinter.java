@@ -132,11 +132,13 @@ public class SchematicPrinter {
 
         final double blockReachDistance = this.minecraft.playerController.getBlockReachDistance() - 0.1;
         final double blockReachDistanceSq = blockReachDistance * blockReachDistance;
+        //For each block in the cube
         for (final MBlockPos pos : BlockPosHelper.getAllInBoxXZY(minX, minY, minZ, maxX, maxY, maxZ)) {
             if (pos.distanceSqToCenter(dX, dY, dZ) > blockReachDistanceSq) {
                 continue;
             }
-
+            
+            //Try to place a block at position.
             try {
                 if (placeBlock(world, player, pos)) {
                     return syncSlotAndSneaking(player, slot, isSneaking, true);
@@ -207,20 +209,24 @@ public class SchematicPrinter {
             return !ConfigurationHandler.destroyInstantly;
         }
 
+        //If the schematic has an air block for this position, skip.
         if (this.schematic.isAirBlock(pos)) {
             return false;
         }
 
+        //If the space already has a solid block, fail.
         if (!realBlock.isReplaceable(world, realPos)) {
             return false;
         }
 
+        //Use our method to get an itemstack from a blockstate.
         final ItemStack itemStack = BlockStateToItemStack.getItemStack(blockState, new RayTraceResult(player), this.schematic, pos, player);
         if (itemStack.isEmpty()) {
             Reference.logger.debug("{} is missing a mapping!", blockState);
             return false;
         }
-
+        
+        //Try to place the item with state at location.
         if (placeBlock(world, player, realPos, blockState, itemStack)) {
             this.timeout[x][y][z] = (byte) ConfigurationHandler.timeout;
 
@@ -314,6 +320,7 @@ public class SchematicPrinter {
             extraClicks = 0;
         }
 
+        //Try to place the requested item in the main hand.
         if (!swapToItem(player.inventory, itemStack)) {
             return false;
         }

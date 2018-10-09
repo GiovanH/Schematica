@@ -16,6 +16,7 @@ public class BlockStateToItemStack {
         final Block block = blockState.getBlock();
 
         try {
+        	//Use the creative mode select to find the itemstack matching the block.
             final ItemStack itemStack = block.getPickBlock(blockState, rayTraceResult, world, pos, player);
             if (!itemStack.isEmpty()) {
                 return itemStack;
