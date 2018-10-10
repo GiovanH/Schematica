@@ -65,6 +65,9 @@ public final class Names {
         public static final String PLAYER_QUOTA_KILOBYTES_DESC = "Amount of storage provided per-player for schematics on the server.";
 
         public static final String LANG_PREFIX = Reference.MODID + ".config";
+		
+        public static final String SUBSTITUTIONS_DESC = "Substitute blocks while printing.";
+		public static final String SUBSTITUTIONS = "Substitutions";
     }
 
     public static final class Command {

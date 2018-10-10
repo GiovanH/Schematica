@@ -15,9 +15,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class ConfigurationHandler {
     public static final ConfigurationHandler INSTANCE = new ConfigurationHandler();
@@ -52,7 +55,8 @@ public class ConfigurationHandler {
     public static final boolean SAVE_ENABLED_DEFAULT = true;
     public static final boolean LOAD_ENABLED_DEFAULT = true;
     public static final int PLAYER_QUOTA_KILOBYTES_DEFAULT = 8192;
-
+    public static final String[] SUBSTITUTIONS_DEFAULT = {};
+	
     public static boolean dumpBlockList = DUMP_BLOCK_LIST_DEFAULT;
     public static boolean showDebugInfo = SHOW_DEBUG_INFO_DEFAULT;
     public static boolean enableAlpha = ENABLE_ALPHA_DEFAULT;
@@ -77,7 +81,9 @@ public class ConfigurationHandler {
     public static boolean saveEnabled = SAVE_ENABLED_DEFAULT;
     public static boolean loadEnabled = LOAD_ENABLED_DEFAULT;
     public static int playerQuotaKilobytes = PLAYER_QUOTA_KILOBYTES_DEFAULT;
-
+    public static String[] substitutions = Arrays.copyOf(SUBSTITUTIONS_DEFAULT, SUBSTITUTIONS_DEFAULT.length);
+    
+    
     public static Property propDumpBlockList = null;
     public static Property propShowDebugInfo = null;
     public static Property propEnableAlpha = null;
@@ -101,8 +107,10 @@ public class ConfigurationHandler {
     public static Property propSaveEnabled = null;
     public static Property propLoadEnabled = null;
     public static Property propPlayerQuotaKilobytes = null;
+    public static Property propSubstitutions = null;
 
     private static final Set<Block> extraAirBlockList = new HashSet<Block>();
+    private static final Map<Block, Set<Block>> substitutionsMap = new HashMap<Block, Set<Block>>();
 
     public static void init(final File configFile) {
         if (configuration == null) {
@@ -118,12 +126,22 @@ public class ConfigurationHandler {
         loadConfigurationSwapSlots();
         loadConfigurationGeneral();
         loadConfigurationServer();
+        loadConfigurationSubstitutions();
 
         Schematica.proxy.createFolders();
 
         if (configuration.hasChanged()) {
             configuration.save();
         }
+    }
+    
+    private static void loadConfigurationSubstitutions() { 
+        propSubstitutions = configuration.get(Names.Config.Category.PRINTER, Names.Config.SUBSTITUTIONS, SUBSTITUTIONS_DEFAULT, Names.Config.SUBSTITUTIONS_DESC);
+        propSubstitutions.setLanguageKey(Names.Config.LANG_PREFIX + "." + Names.Config.SUBSTITUTIONS);
+        //Set valid pattern for entries
+        //propSubstitutions.setValidationPattern(Pattern.compile("([A-Za-z]+:((,){1}( )*|$))+?"));
+        substitutions = propSubstitutions.getStringList();
+        populateSubstitutions();
     }
 
     private static void loadConfigurationDebug() {
@@ -257,6 +275,21 @@ public class ConfigurationHandler {
         return newPath.replace("\\", "/");
     }
 
+    private static void populateSubstitutions() {
+        substitutionsMap.clear();
+        for (final String name : substitutions) {
+            final Block block = Block.REGISTRY.getObject(new ResourceLocation(name));
+            if (block != Blocks.AIR) {
+            	Set<Block> subsForBlock = substitutionsMap.get(block);
+            	if (subsForBlock == null) {
+            		subsForBlock = new HashSet<Block>();
+            	}
+            	subsForBlock.add(block);
+            	//substitutionsMap.put(block, subsForBlock)
+            }
+        }
+    }
+    
     private static void populateExtraAirBlocks() {
         extraAirBlockList.clear();
         for (final String name : extraAirBlocks) {
@@ -296,5 +329,9 @@ public class ConfigurationHandler {
 
     public static boolean isExtraAirBlock(final Block block) {
         return extraAirBlockList.contains(block);
+    }
+    
+    public static Set<Block> getSubstitutionsForBlock(final Block block) {
+        return substitutionsMap.get(block);
     }
 }
